@@ -1,0 +1,212 @@
+<?php
+
+/**
+ * Tests parsing links for entities.
+ */
+class FillPdfEntityTestCase extends DrupalWebTestCase {
+
+  /**
+   * The profile to install as a basis for testing.
+   *
+   * @var string
+   */
+  protected $profile = 'minimal';
+
+  protected $nodes;
+  protected $terms;
+  protected $users;
+
+  /**
+   *
+   */
+  public static function getInfo() {
+    // Note: getInfo() strings are not translated with t().
+    return array(
+      'name' => 'FillPDF link creation for entities',
+      'description' => 'Ensure that FillPDF creates correct links for entities.',
+      'group' => 'FillPDF',
+    );
+  }
+
+  /**
+   *
+   */
+  public function setUp() {
+    // Enable any modules required for the test. This should be an array of
+    // module names.
+    parent::setUp(array('taxonomy', 'entity', 'fillpdf'));
+
+    // Create three test nodes with the IDs 1, 2, and 3.
+    $nodes = array();
+    for ($nid = 1; $nid <= 3; $nid++) {
+      $nodes[] = entity_create('node', array(
+        'type' => 'article',
+        'nid' => $nid,
+      ));
+    }
+    $this->nodes = $nodes;
+
+    // Create three test terms with the IDs 12, 23, and 34.
+    $terms = array();
+    for ($tid = 11; $tid <= 13; $tid++) {
+      $terms[] = entity_create('taxonomy_term', array(
+        'vocabulary_machine_name' => 'tags',
+        'tid' => $tid,
+      ));
+    }
+    $this->terms = $terms;
+
+    // Create three test users with the IDs 123, 234, and 345.
+    $users = array();
+    for ($uid = 111; $uid <= 113; $uid++) {
+      $users[] = entity_create('user', array(
+        'uid' => $uid,
+      ));
+    }
+    $this->users = $users;
+  }
+
+  /**
+   * Test fillpdf_context_to_link() and fillpdf_pdf_link() with entities.
+   */
+  public function testEntityLink() {
+    $base_context = array(
+      'nodes' => array(),
+      'webforms' => array(),
+      'uc_orders' => array(),
+      'uc_order_products' => array(),
+      'entities' => array(),
+    );
+    $message = "Test case %name:\n<br />%output (actual result) equals\n<br />%expected (expected).";
+
+    foreach ($this->dataProvider() as $test_case) {
+      list($name, $entities, $expected) = $test_case;
+
+      // Ensure links were correctly created from context.
+      $context = array(
+        'entities' => $entities,
+      ) + $base_context;
+      $output = rawurldecode(fillpdf_context_to_link(1, $context));
+
+      $this->assertEqual($expected, $output, t($message, array(
+        '%name' => $name,
+        '%output' => $output,
+        '%expected' => $expected,
+      )));
+    }
+  }
+
+  /**
+   * Data provider for testEntityLink().
+   *
+   * @return array
+   *   Array of test cases.
+   */
+  public function dataProvider() {
+    $base_url = url('fillpdf', array(
+      'query' => array('fid' => 1),
+      'absolute' => TRUE,
+    ));
+
+    $test_cases = array();
+
+    // Test case: single node.
+    $test_cases[] = array(
+      'Single node',
+      array(
+        'node' => array_slice($this->nodes, 0, 1),
+      ),
+      $base_url . '&entity_id=node:1',
+    );
+
+    // Test case: multiple nodes.
+    $test_cases[] = [
+      'Multiple nodes',
+      array(
+        'node' => $this->nodes,
+      ),
+      $base_url . '&entity_ids[0]=node:1&entity_ids[1]=node:2&entity_ids[2]=node:3',
+    ];
+
+    // Test case: multiple nodes in reverse order.
+    $test_cases[] = [
+      'Multiple nodes (in reverse order)',
+      array(
+        'node' => array_reverse($this->nodes),
+      ),
+      $base_url . '&entity_ids[0]=node:3&entity_ids[1]=node:2&entity_ids[2]=node:1',
+    ];
+
+    // Test case: single term.
+    $test_cases[] = array(
+      'Single term',
+      array(
+        'taxonomy_term' => array_slice($this->terms, 0, 1),
+      ),
+      $base_url . '&entity_id=taxonomy_term:11',
+    );
+
+    // Test case: multiple terms.
+    $test_cases[] = [
+      'Multiple terms',
+      array(
+        'taxonomy_term' => $this->terms,
+      ),
+      $base_url . '&entity_ids[0]=taxonomy_term:11&entity_ids[1]=taxonomy_term:12&entity_ids[2]=taxonomy_term:13',
+    ];
+
+    // Test case: single user.
+    $test_cases[] = array(
+      'Single user',
+      array(
+        'user' => array_slice($this->users, 0, 1),
+      ),
+      $base_url . '&entity_id=user:111',
+    );
+
+    // Test case: multiple users.
+    $test_cases[] = [
+      'Multiple users',
+      array(
+        'user' => $this->users,
+      ),
+      $base_url . '&entity_ids[0]=user:111&entity_ids[1]=user:112&entity_ids[2]=user:113',
+    ];
+
+    // Test case: node, term, user.
+    $test_cases[] = array(
+      'Node, term, user',
+      array(
+        'node' => array_slice($this->nodes, 0, 1),
+        'taxonomy_term' => array_slice($this->terms, 0, 1),
+        'user' => array_slice($this->users, 0, 1),
+      ),
+      $base_url . '&entity_ids[0]=node:1&entity_ids[1]=taxonomy_term:11&entity_ids[2]=user:111',
+    );
+
+    // Test case: user, term, multiple nodes.
+    $test_cases[] = array(
+      'user, term, multiple nodes',
+      array(
+        'user' => array_slice($this->users, 0, 1),
+        'taxonomy_term' => array_slice($this->terms, 0, 1),
+        'node' => $this->nodes,
+      ),
+      $base_url . '&entity_ids[0]=user:111&entity_ids[1]=taxonomy_term:11&entity_ids[2]=node:1&entity_ids[3]=node:2&entity_ids[4]=node:3',
+    );
+
+    // Test case: user, multiple nodes in reverse order, term.
+    $test_cases[] = array(
+      'user, multiple nodes (in reverse order), term',
+      array(
+        'user' => array_slice($this->users, 0, 1),
+        'node' => array_reverse($this->nodes),
+        'taxonomy_term' => array_slice($this->terms, 0, 1),
+      ),
+      $base_url . '&entity_ids[0]=user:111&entity_ids[1]=node:3&entity_ids[2]=node:2&entity_ids[3]=node:1&entity_ids[4]=taxonomy_term:11',
+    );
+
+    return $test_cases;
+  }
+
+}

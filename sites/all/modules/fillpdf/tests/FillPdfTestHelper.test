@@ -1,0 +1,239 @@
+<?php
+
+/**
+ * Helper functions for FillPDF testing.
+ */
+trait FillPdfTestHelper {
+
+  /**
+   * The user object for a privileged user.
+   *
+   * @var object|false
+   */
+  protected $privilegedUser;
+
+  /**
+   * Creates a privileged user account.
+   */
+  protected function createPrivilegedUser() {
+    // Meh. Caching.
+    drupal_static_reset('checkPermissions');
+
+    // Create and log in our privileged user.
+    $this->privilegedUser = $this->drupalCreateUser(array(
+      'access administration pages',
+      'administer pdfs',
+      'publish all pdfs',
+    ));
+    $this->drupalLogin($this->privilegedUser);
+  }
+
+  /**
+   * Uploads a PDF test file.
+   */
+  protected function uploadTestPdf() {
+    $this->drupalPost('admin/structure/fillpdf', array(
+      'files[upload_pdf]' => drupal_realpath(drupal_get_path('module', 'fillpdf') . '/tests/fillpdf_test_v4.pdf'),
+    ), t('Upload'));
+    $this->assertText('fillpdf_test_v4.pdf was successfully uploaded.');
+    $this->assertResponse(200, 'No integrity constraint violation.');
+  }
+
+  /**
+   * Configures FillPdf using the test backend.
+   */
+  protected function configureBackend() {
+    variable_set('fillpdf_service', 'test');
+    variable_set('fillpdf_scheme', 'private');
+  }
+
+  /**
+   * Configures FillPdf using the local_service backend.
+   */
+  protected function configureLocalServiceBackend() {
+    variable_set('fillpdf_service', 'local_service');
+    variable_set('fillpdf_scheme', 'private');
+    variable_set('fillpdf_local_service_endpoint', 'http://127.0.0.1:8085');
+  }
+
+  /**
+   * Configures FillPdf using the pdftk backend.
+   */
+  protected function configurePdftkBackend() {
+    variable_set('fillpdf_service', 'pdftk');
+    variable_set('fillpdf_scheme', 'private');
+  }
+
+  /**
+   * Get the fid of the uploaded file to construct the link.
+   *
+   * @return int|false
+   *   The fid or FALSE if there are no entries in {fillpdf_forms}.
+   */
+  protected function getLatestFillPdfForm() {
+    return db_query('select MAX(fid) AS fid from {fillpdf_forms};')
+      ->fetchField();
+  }
+
+  /**
+   * Create an entity with an image.
+   *
+   * @param object $image
+   *   A file object representing the image to upload.
+   * @param string $field_name
+   *   Name of the image field the image should be attached to.
+   * @param string $entity_type
+   *   The entity's entity type.
+   * @param string $bundle
+   *   The entity's bundle.
+   * @param string $label
+   *   (optional) The entity's label.
+   *
+   * @return int|false
+   *   Entity ID of the created entity, or FALSE if the entity could not be
+   *   created.
+   *
+   * @see ImageFieldTestCase::uploadNodeImage()
+   */
+  public function createImageFieldEntity($image, $field_name, $entity_type, $bundle, $label = NULL) {
+    $info = entity_get_info($entity_type);
+
+    if (empty($image->fid)) {
+      // Create a managed file.
+      file_save($image);
+    }
+
+    $entity = (object) array(
+      'is_new' => TRUE,
+      'language' => LANGUAGE_NONE,
+    );
+    if ($bundle_key = $info['entity keys']['bundle']) {
+      $entity->$bundle_key = $bundle;
+    }
+    if ($label_key = $info['entity keys']['label']) {
+      $entity->$label_key = isset($label) ? $label : $this->randomName();
+    }
+    $entity->$field_name = array(
+      LANGUAGE_NONE => array(
+        0 => array(
+          'fid' => $image->fid,
+        ),
+      ),
+    );
+
+    switch ($entity_type) {
+      case 'node':
+        node_save($entity);
+        return $entity->nid;
+
+      case 'taxonomy_term':
+        $entity->vid = taxonomy_vocabulary_machine_name_load($bundle)->vid;
+        $status = taxonomy_term_save($entity);
+        return $status == SAVED_NEW ? $entity->tid : FALSE;
+
+      case 'user':
+        $user = user_save($entity);
+        return $user->uid;
+
+      default:
+        if (module_exists('entity')) {
+          entity_save($entity_type, $entity);
+          $id_key = $info['entity keys']['id'];
+          return (int) $entity->$id_key;
+        }
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Create a new image field.
+   *
+   * @param string $name
+   *   The name of the new field (all lowercase), exclude the "field_" prefix.
+   * @param string $entity_type
+   *   The entity type that this field will be added to.
+   * @param string $bundle
+   *   The bundle that this field will be added to.
+   * @param array $field_settings
+   *   (optional) A list of field settings that will be added to the defaults.
+   * @param array $instance_settings
+   *   (optional) A list of instance settings that will be added to the instance
+   *   defaults.
+   * @param array $widget_settings
+   *   (optional) A list of widget settings that will be added to the widget
+   *   defaults.
+   *
+   * @return mixed
+   *   The return value of field_create_instance().
+   *
+   * @throws \FieldException
+   *
+   * @see \ImageFieldTestCase::createImageField()
+   */
+  public function createImageField($name, $entity_type, $bundle, array $field_settings = array(), array $instance_settings = array(), array $widget_settings = array()) {
+    $field = array(
+      'field_name' => $name,
+      'type' => 'image',
+      'settings' => array(),
+      'cardinality' => !empty($field_settings['cardinality']) ? $field_settings['cardinality'] : 1,
+    );
+    $field['settings'] = array_merge($field['settings'], $field_settings);
+    field_create_field($field);
+
+    $instance = array(
+      'field_name' => $field['field_name'],
+      'entity_type' => $entity_type,
+      'label' => $name,
+      'bundle' => $bundle,
+      'required' => !empty($instance_settings['required']),
+      'settings' => array(),
+      'widget' => array(
+        'type' => 'image_image',
+        'settings' => array(),
+      ),
+    );
+    $instance['settings'] = array_merge($instance['settings'], $instance_settings);
+    $instance['widget']['settings'] = array_merge($instance['widget']['settings'], $widget_settings);
+    return field_create_instance($instance);
+  }
+
+  /**
+   * Maps FillPDF fields to entity fields.
+   *
+   * @param string $entity_type
+   *   The entity type.
+   * @param array $fields
+   *   Associative array of PDF fields.
+   * @param int $fid
+   *   ID of the FillPDF form.
+   */
+  protected function mapFillPdfFieldsToEntityFields($entity_type, array $fields, $fid) {
+    $info = entity_get_info($entity_type);
+    $token_type = $info['token type'];
+    $label_key = $info['entity keys']['label'];
+
+    $image_field_map = array(
+      'node' => '[node:field_test_image]',
+      'taxonomy_term' => '[term:field_term_image]',
+      'user' => '[user:picture]',
+    );
+
+    foreach ($fields as $pdf_key => $field) {
+      if ($pdf_key == 'ImageField') {
+        if (isset($image_field_map[$entity_type])) {
+          $field['value'] = $image_field_map[$entity_type];
+        }
+      }
+      elseif ($pdf_key == 'TextField') {
+        $field['value'] .= "[{$token_type}:{$label_key}]";
+      }
+      else {
+        continue;
+      }
+
+      fillpdf_fields_create_update($fid, $pdf_key, $field, TRUE);
+    }
+  }
+
+}

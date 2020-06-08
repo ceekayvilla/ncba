@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * @file
+ * FillPDF Testing module.
+ */
+
+/**
+ * Implements hook_node_access().
+ */
+function fillpdf_test_node_access($node, $op, $account) {
+  if (is_string($node)) {
+    $node = new stdClass();
+    $node->type = $node;
+  }
+
+  if ($node->type !== 'page') {
+    return NODE_ACCESS_IGNORE;
+  }
+
+  if (!empty($account->uid) && (int) $account->uid === 1) {
+    return NODE_ACCESS_ALLOW;
+  }
+
+  return NODE_ACCESS_DENY;
+}

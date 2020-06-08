@@ -1,0 +1,48 @@
+	# forbid viewing of directories
+	Options All -Indexes
+
+	# disable the server signature- helps with preformance
+	ServerSignature Off
+
+	# helps at times for htaccess
+	Options +FollowSymlinks
+
+	# no one should touch htaccess
+	<Files .htaccess>
+	#deny from all
+	</Files>
+
+
+<IfModule mod_rewrite.c>
+
+
+
+	RewriteEngine On
+	#RewriteBase /diaspora/product-forms/diaspora_image
+	#Don't re-write this
+
+
+	#make this last rule to redirect to home page
+	RewriteRule ^index.php?$ templates/diaspora/home.php [NC,L]
+
+	RewriteCond %{REQUEST_FILENAME} -f [OR]
+	RewriteCond %{REQUEST_FILENAME} -d
+	RewriteRule (.*) - [L]
+
+
+	#redirect css and js
+	RewriteRule ^(css|js|images|fonts|include|img)/(.*)?$ templates/diaspora/$1/$2 [R,L]
+	RewriteRule ^(.*)/(css|js|images|fonts|include|img)/(.*)?$ templates/diaspora/$2/$3 [R,L]
+
+	RewriteRule    ^([A-Za-z0-9-]+)/?$    templates/diaspora/$1.php    [NC,L]    # Handle product requests
+	RewriteRule    ^([A-Za-z0-9-]+)/([A-Za-z0-9-]+)?$    templates/diaspora/$1.php?data=$2    [NC,L]    # Handle product requests
+
+
+
+
+	ErrorDocument 404 /templates/diaspora/404.php
+	ErrorDocument 403 /templates/diaspora/404.php
+	ErrorDocument 500 /templates/diaspora/404.php
+
+
+</IfModule>

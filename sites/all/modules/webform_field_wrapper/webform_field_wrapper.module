@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * @file
+ * Webform module field wrapper module.
+ */
+
+/*
+ * Implements hook_webform_component_info().
+ */
+function webform_field_wrapper_webform_component_info() {
+  $component = array();
+  $component['field_wrapper'] = array(
+    'type' => 'markup',
+    'label' => t('Field Wrapper'),
+    'description' => t('Groups fields together'),
+    'features' => array(
+      // Add content to CSV downloads. Defaults to FALSE.
+      'csv' => FALSE,
+      // Show this field in e-mailed submissions. Defaults to TRUE.
+      'email' => FALSE,
+      // Allow this field to be used as an e-mail FROM or TO address. Defaults
+      // to FALSE.
+      'email_address' => FALSE,
+      // Allow this field to be used as an e-mail SUBJECT or FROM name. Defaults
+      // to FALSE.
+      'email_name' => FALSE,
+      // This field may be toggled as required or not. Defaults to FALSE.
+      'required' => FALSE,
+      // If this field can be used as a conditional SOURCE. All fields may
+      // always be displayed conditionally, regardless of this setting.
+      // Defaults to FALSE.
+      'conditional' => TRUE,
+      // If this field allows other fields to be grouped within it (like a
+      // fieldset or tabs). Defaults to TRUE.
+      'group' => TRUE,
+      // If this field saves a file that can be used as an e-mail attachment.
+      // Defaults to FALSE.
+      'attachment' => FALSE,
+    ),
+    'file' => 'components/field_wrapper.inc',
+  );
+  return $component;
+};

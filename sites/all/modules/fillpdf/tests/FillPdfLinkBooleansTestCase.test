@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * Tests some unit test cases.
+ */
+class FillPdfLinkBooleansTestCase extends DrupalWebTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'FillPDF Boolean query parameter unit test',
+      'description' => 'Unit tests evaluation of boolean query parameters.',
+      'group' => 'FillPDF',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    // Enable any modules required for the test. This should be an array of
+    // module names.
+    parent::setUp(array('fillpdf'));
+  }
+
+  /**
+   * Tests boolean query parameters.
+   */
+  public function testBooleans() {
+    foreach ($this->dataProvider() as $case) {
+      foreach ($case as $input => $expected) {
+        $request_context = fillpdf_link_to_stub_context($this->link($input));
+        $this->assertEqual(is_null($expected) ? FALSE : $expected, $request_context['sample']);
+        $this->assertEqual(is_null($expected) ? FALSE : $expected, $request_context['force_download']);
+        $this->assertEqual(is_null($expected) ? TRUE : $expected, $request_context['flatten']);
+      }
+    }
+  }
+
+  /**
+   * Input helper for testBooleans().
+   *
+   * @param string $input
+   *   The string to set as the query parameter value.
+   *
+   * @return string
+   *   The full URL.
+   */
+  public function link($input) {
+    return fillpdf_pdf_link(1, 1) . '&sample=' . $input . '&download=' . $input . '&flatten=' . $input;
+  }
+
+  /**
+   * Data provider for testBooleans().
+   *
+   * @return array
+   *   Array of test cases.
+   */
+  public function dataProvider() {
+    return array(
+      array('1' => TRUE),
+      array('true' => TRUE),
+      array('True' => TRUE),
+      array('TRUE' => TRUE),
+      array('on' => TRUE),
+      array('On' => TRUE),
+      array('ON' => TRUE),
+      array('yes' => TRUE),
+      array('Yes' => TRUE),
+      array('YES' => TRUE),
+
+      array('0' => FALSE),
+      array('false' => FALSE),
+      array('False' => FALSE),
+      array('FALSE' => FALSE),
+      array('off' => FALSE),
+      array('Off' => FALSE),
+      array('OFF' => FALSE),
+      array('no' => FALSE),
+      array('No' => FALSE),
+      array('NO' => FALSE),
+
+      // These three are important, so should always be obeyed:
+      array('' => NULL),
+      array('foo' => NULL),
+      array('bar' => NULL),
+
+      // The following ones are less fortunate, so may be refactored:
+      array('-1' => NULL),
+      array('2' => NULL),
+      array('y' => NULL),
+      array('Y' => NULL),
+      array('n' => NULL),
+      array('N' => NULL),
+    );
+  }
+
+}

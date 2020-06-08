@@ -1,0 +1,456 @@
+/***** GENERAL STYLING *******/
+/* line 21, main.scss */
+img {
+  height: auto;
+}
+
+/* line 27, main.scss */
+.centerAligner {
+  width: 96%;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  max-width: 1440px;
+}
+
+/* line 38, main.scss */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'epocaclassicbold';
+}
+
+/* line 44, main.scss */
+p, a, span, input, li, label {
+  font-family: 'epocaclassicextralight';
+  text-decoration: none;
+}
+
+/* line 51, main.scss */
+p {
+  font-size: 16px;
+  letter-spacing: 1px;
+  line-height: 24px;
+}
+
+/* line 59, main.scss */
+.fl {
+  float: left;
+}
+
+/* line 65, main.scss */
+.fr {
+  float: right;
+}
+
+/* line 71, main.scss */
+.one_third {
+  width: 30%;
+  margin-right: 3%;
+}
+
+/* line 78, main.scss */
+.two_third {
+  width: 66%;
+  margin-right: 3%;
+}
+
+/* line 83, main.scss */
+.center {
+  text-align: center;
+}
+
+/* line 87, main.scss */
+.one_quarter {
+  width: 23%;
+  margin-right: 2%;
+}
+
+/* line 94, main.scss */
+.half {
+  width: 48%;
+  margin-right: 2%;
+}
+
+/* line 101, main.scss */
+.three_quarter {
+  width: 73%;
+  margin-right: 2%;
+}
+
+/* line 108, main.scss */
+.full_width {
+  width: 100%;
+}
+
+/* line 114, main.scss */
+.one_fifth {
+  width: 18%;
+  margin-right: 2%;
+}
+
+/* line 121, main.scss */
+.two_fifth {
+  width: 38%;
+  margin-right: 2%;
+}
+
+/* line 126, main.scss */
+.three_fifth {
+  width: 58%;
+  margin-right: 2%;
+}
+
+/* line 133, main.scss */
+.one_eigth {
+  width: 10.5%;
+  margin-right: 2%;
+}
+
+/* line 140, main.scss */
+.two_eigth {
+  width: 23%;
+  margin-right: 2%;
+}
+
+/* line 156, main.scss */
+button, .button-primary {
+  cursor: pointer;
+  outline: none;
+  border: none;
+}
+
+/* line 164, main.scss */
+.readMore, .button-primary {
+  display: inline-block;
+  padding: 15px 40px;
+  text-align: center;
+  border-radius: 5px;
+  -o-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  background: #77BC1F;
+  color: #fff;
+  margin-top: 15px;
+  text-transform: uppercase;
+}
+
+/* line 177, main.scss */
+.readMore:hover, .button-primary:hover {
+  background: #fff;
+  color: #77BC1F;
+}
+
+/***** END GENERAL STYLING *******/
+/***** CONTENT LAYOUT STYLING *******/
+/* line 192, main.scss */
+.contentWrapper {
+  position: relative;
+  width: 100%;
+}
+/* line 197, main.scss */
+.contentWrapper .imageBackground {
+  position: fixed;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  width: 100%;
+}
+/* line 205, main.scss */
+.contentWrapper .imageBackground figure {
+  width: 100%;
+}
+/* line 208, main.scss */
+.contentWrapper .imageBackground figure img {
+  width: 100%;
+  /*min-width: 600px;*/
+}
+/* line 215, main.scss */
+.contentWrapper .jiraniLogo {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+}
+/* line 220, main.scss */
+.contentWrapper .jiraniLogo img {
+  width: 100%;
+}
+/* line 225, main.scss */
+.contentWrapper .coopLogo {
+  position: fixed;
+  bottom: 20px;
+  right: 0px;
+}
+.contentWrapper .coopLogo ul{
+  display: block;
+
+}
+.contentWrapper .coopLogo ul li{
+  display: block;
+  float: right;
+  width: 30px;
+  margin-right: 5px;
+  list-style: none;
+}
+/* line 231, main.scss */
+.contentWrapper .description {
+  position: relative;
+  left: 0px;
+  top: 0px;
+  bottom: 0px;
+  width: 70%;
+  background: url(../img/overlay-yeah.png) repeat-y right top;
+}
+/* line 240, main.scss */
+.contentWrapper .description article {
+  margin-left: 5%;
+  padding-top: 5%;
+  width: 78%;
+}
+/* line 247, main.scss */
+.contentWrapper .description article h1 {
+  color: #79C143;
+  margin-bottom: 20px;
+  font-size: 35px;
+  text-transform: uppercase;
+}
+/* line 252, main.scss */
+.contentWrapper .description article p {
+  margin-bottom: 20px;
+  color: #fff;
+}
+/* line 257, main.scss */
+.contentWrapper .description article a {
+  color: #79C143;
+  font-family: 'epocaclassicbold';
+}
+/* line 264, main.scss */
+.contentWrapper .description article ul li {
+  list-style: disc;
+  color: #79C143;
+  font-family: 'epocaclassicbold';
+  margin-bottom: 5px;
+}
+/* line 279, main.scss */
+.contentWrapper .description article form label {
+  color: #79C143;
+  font-family: 'epocaclassicbold';
+  margin-bottom: 15px;
+  display: block;
+}
+/* line 288, main.scss */
+.contentWrapper .description article form input[type="text"], .contentWrapper .description article form textarea,.contentWrapper .description article form input[type="email"], .contentWrapper .description article form select {
+  height: 56px;
+  border-radius: 5px;
+  -o-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  background: #F2F2F2;
+  border: none;
+  outline: none;
+  width: 100%;
+  text-indent: 20px;
+  font-family: 'epocaclassicextralight';
+  color: #808080;
+}
+/* line 302, main.scss */
+.contentWrapper .description article form select {
+  font-family: 'epocaclassicextralight_italic';
+  text-indent: 20px;
+}
+/* line 307, main.scss */
+.contentWrapper .description article form button,.button-primary {
+  display: block;
+  width: 100%;
+}
+/* line 312, main.scss */
+.contentWrapper .description article form ::-webkit-input-placeholder {
+  /* Chrome/Opera/Safari */
+  color: #808080;
+  font-family: 'epocaclassicextralight_italic';
+}
+/* line 316, main.scss */
+.contentWrapper .description article form ::-moz-placeholder {
+  /* Firefox 19+ */
+  color: #808080;
+  font-family: 'epocaclassicextralight_italic';
+}
+/* line 320, main.scss */
+.contentWrapper .description article form :-ms-input-placeholder {
+  /* IE 10+ */
+  color: #808080;
+  font-family: 'epocaclassicextralight_italic';
+}
+/* line 324, main.scss */
+.contentWrapper .description article form :-moz-placeholder {
+  /* Firefox 18- */
+  color: #808080;
+  font-family: 'epocaclassicextralight_italic';
+}
+
+/***** END CONTENT LAYOUT STYLING *******/
+/***** MEDIA QUERY 1100PX *******/
+/***** END MEDIA QUERY 1100PX *******/
+/***** MEDIA QUERY 960PX *******/
+@media screen and (max-width: 960px) {
+  /* line 350, main.scss */
+  .contentWrapper .imageBackground {
+    position: relative;
+    width: 100%;
+    max-height: 400px;
+    overflow: hidden;
+    top: 0px;
+  }
+  /* line 358, main.scss */
+  .contentWrapper .imageBackground h1 {
+    width: 80%;
+    top: 35%;
+    font-size: 30px;
+  }
+  /* line 365, main.scss */
+  .contentWrapper .jiraniLogo {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 100px;
+  }
+  /* line 372, main.scss */
+  .contentWrapper .coopLogo {
+    position: absolute;
+    bottom: auto;
+    right: auto;
+    left: 10px;
+    top: 20px;
+    max-width: 240px;
+    /*width: 100%;*/
+  }
+
+  .contentWrapper .coopLogo img { max-width: 200px;
+    width: 100%;}
+  /* line 380, main.scss */
+  .contentWrapper .description {
+    position: relative;
+    width: 100%;
+    overflow-y: visible;
+    top: 0px;
+    background: url(../img/overlay_vertical.png) left bottom repeat-x;
+  }
+  /* line 388, main.scss */
+  .contentWrapper .description article {
+    padding-top: 20px;
+    margin-top: 0px;
+    margin-right: 4%;
+    margin-left: 4%;
+    padding-bottom: 20px;
+    width: 92%;
+  }
+  /* line 397, main.scss */
+  .contentWrapper .description article form {
+    margin-top: 20px;
+  }
+  /* line 400, main.scss */
+  .contentWrapper .description article form input, .contentWrapper .description article form button, .button-primary {
+    width: 100%;
+  }
+}
+/***** END MEDIA QUERY 960PX *******/
+/*dev edits*/
+/* line 427, main.scss */
+div.errors, .error {
+  color: red;
+  line-height: 22px;
+  margin-bottom: 20px;
+}
+
+/* line 432, main.scss */
+div.errors ul {
+  list-style: decimal;
+}
+
+/* line 435, main.scss */
+div.success, ul.success {
+  display: none;
+  color: #77bc1f;
+}
+
+/* line 436, main.scss */
+div.fail, ul.fail {
+  display: none;
+  color: #ff0000;
+}
+
+/* line 437, main.scss */
+div.accordion ol.terms {
+  list-style: decimal;
+}
+
+/* line 438, main.scss */
+span.bold, div.accordion span.bold {
+  font-family: 'epocaclassicbold';
+  font-size: 16px;
+}
+
+/* line 439, main.scss */
+div.accordion a, ul.success {
+  color: #77bc1f;
+  font-family: 'epocaclassicbold';
+  font-size: 12px;
+}
+
+/* line 440, main.scss */
+article > h1, .webform-client-form h1 {
+  font-size: 35px;
+  text-transform: uppercase;
+}
+
+/* line 441, main.scss */
+.header35 {
+  font-family: 'epocaclassicbold';
+}
+
+/* line 442, main.scss */
+.headerThin {
+  font-family: 'epocaclassicmedium';
+}
+
+/* line 443, main.scss */
+h1.accordionTitle {
+  font-size: 28px;
+}
+
+/* line 444, main.scss */
+ul.success {
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+
+@media screen and (max-width: 960px) {
+  /* line 446, main.scss */
+  h1.accordionTitle {
+    font-size: 17px;
+  }
+}
+@media screen and (max-width: 320px) {
+  /* line 449, main.scss */
+  h1.accordionTitle {
+    font-size: 13px;
+  }
+}
+
+/*# sourceMappingURL=main.css.map */
+/*dev edits*/
+#edit-reset, .node-22{display: none;}
+.terms_conditions{
+
+}
+
+.terms_conditions input{
+  display: inline-block !important;
+  width: 10% !important;
+}
+.terms_conditions label{
+  display: inline-block !important;
+}
+body{
+  background-color: #000;
+}
+

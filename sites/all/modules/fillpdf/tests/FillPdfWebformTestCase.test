@@ -1,0 +1,148 @@
+<?php
+
+/**
+ * Tests parsing links.
+ */
+class FillPdfWebformTestCase extends DrupalWebTestCase {
+
+  /**
+   * The profile to install as a basis for testing.
+   *
+   * @var string
+   */
+  protected $profile = 'minimal';
+
+  protected $webforms;
+  protected $message;
+
+  /**
+   *
+   */
+  public static function getInfo() {
+    // Note: getInfo() strings are not translated with t().
+    return array(
+      'name' => 'FillPDF link creation for Webform',
+      'description' => 'Ensure that FillPDF creates correct links for webforms.',
+      'group' => 'FillPDF',
+    );
+  }
+
+  /**
+   *
+   */
+  public function setUp() {
+    // Enable any modules required for the test. This should be an array of
+    // module names.
+    parent::setUp(array('fillpdf'));
+
+    // Create three sets of a webform with a submission each.
+    $webforms = array();
+    for ($nid = 111; $nid <= 113; $nid++) {
+      $webforms[] = array(
+        'webform' => (object) array('nid' => $nid),
+        'submission' => (object) array('sid' => $nid + 100),
+      );
+    }
+    $this->webforms = $webforms;
+
+    $this->message = "Test case %name:\n<br />%output (actual result) equals\n<br />%expected (expected).";
+  }
+
+  /**
+   * Test fillpdf_context_to_link() with webforms.
+   */
+  public function testWebformLink() {
+    $base_context = array(
+      'nodes' => array(),
+      'webforms' => array(),
+      'uc_orders' => array(),
+      'uc_order_products' => array(),
+      'entities' => array(),
+    );
+
+    foreach ($this->dataProvider() as $test_case) {
+      list($name, $webforms, $expected) = $test_case;
+
+      // Ensure links were correctly created from context.
+      $context = array(
+        'webforms' => $webforms,
+      ) + $base_context;
+      $output = rawurldecode(fillpdf_context_to_link(1, $context));
+
+      $this->assertEqual($expected, $output, t($this->message, array(
+        '%name' => $name,
+        '%output' => $output,
+        '%expected' => $expected,
+      )));
+    }
+  }
+
+  /**
+   * Test fillpdf_pdf_link() with a single webform in legacy format.
+   *
+   * Fillpdf_pdf_link() accepts a single array of webform and submission being
+   * passed in as $webform_arr. We're therefore separately testing single
+   * webform cases in this legacy format. All other cases are fully covered
+   * by testWebformLink().
+   */
+  public function testLegacyWebformLink() {
+    foreach ($this->dataProvider() as $test_case) {
+      list($name, $webforms, $expected) = $test_case;
+
+      if (count($webforms) == 1) {
+        $webform = reset($webforms);
+        $webform_arr = array(
+          'nid' => $webform['webform']->nid,
+          'sid' => $webform['submission']->sid,
+        );
+        // fillpdf_pdf_link() also accepts a single webform.
+        $output = rawurldecode(fillpdf_pdf_link(1, NULL, $webform_arr));
+
+        $this->assertEqual($expected, $output, t($this->message, array(
+          '%name' => $name . ' (legacy format)',
+          '%output' => $output,
+          '%expected' => $expected,
+        )));
+      }
+    }
+  }
+
+  /**
+   * Data provider for testWebformLink() and testLegacyWebformLink().
+   *
+   * @return array
+   *   Array of test cases.
+   */
+  public function dataProvider() {
+    $base_url = url('fillpdf', array(
+      'query' => array('fid' => 1),
+      'absolute' => TRUE,
+    ));
+
+    $test_cases = array();
+
+    // Test case: single webform.
+    $test_cases[] = array(
+      'Single webform',
+      array(reset($this->webforms)),
+      $base_url . '&webform[nid]=111&webform[sid]=211',
+    );
+
+    // Test case: multiple webforms.
+    $test_cases[] = array(
+      'Multiple webforms',
+      $this->webforms,
+      $base_url . '&webforms[0][nid]=111&webforms[0][sid]=211&webforms[1][nid]=112&webforms[1][sid]=212&webforms[2][nid]=113&webforms[2][sid]=213',
+    );
+
+    // Test case: multiple webforms in reverse order.
+    $test_cases[] = array(
+      'Multiple webforms (in reverse order)',
+      array_reverse($this->webforms),
+      $base_url . '&webforms[0][nid]=113&webforms[0][sid]=213&webforms[1][nid]=112&webforms[1][sid]=212&webforms[2][nid]=111&webforms[2][sid]=211',
+    );
+
+    return $test_cases;
+  }
+
+}

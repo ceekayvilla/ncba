@@ -1,0 +1,13 @@
+name = Webform Field Wrapper
+description = Groups webform components into enclosing DIV's for better theme usage and attempts to provide a better usage pattern other than fieldgroup.
+core = 7.x
+package = Webform
+dependencies[] = webform
+version = 7.x-1.0
+
+; Information added by Drupal.org packaging script on 2015-10-27
+version = "7.x-1.0+0-dev"
+core = "7.x"
+project = "webform_field_wrapper"
+datestamp = "1445945040"
+

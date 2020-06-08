@@ -1,0 +1,160 @@
+<?php
+
+/**
+ * Tests the PDF handling functions of the API (a.k.a. the whole API).
+ */
+class FillPdfTestCase extends FileFieldTestCase {
+
+  use FillPdfTestHelper;
+
+  protected $nonPrivilegedUser;
+
+  /**
+   *
+   */
+  public static function getInfo() {
+    // Note: getInfo() strings are not translated with t().
+    return array(
+      'name' => 'FillPDF general',
+      'description' => 'Ensure that FillPDF administration functions are present and work.',
+      'group' => 'FillPDF',
+    );
+  }
+
+  /**
+   *
+   */
+  public function setUp() {
+    // Enable any modules required for the test. This should be an array of
+    // module names.
+    parent::setUp(array('entity_token', 'fillpdf', 'fillpdf_test'));
+
+    $this->createPrivilegedUser();
+
+    $this->nonPrivilegedUser = $this->drupalCreateUser(array('publish own pdfs'));
+  }
+
+  /**
+   *
+   */
+  public function testPdfUpload() {
+    // FillPDF not configured.
+    $this->drupalGet('admin/structure/fillpdf');
+
+    $this->assertText('Before you can upload PDF files, you must configure FillPDF.');
+    $this->assertNoFieldByXPath('//input[@id="edit-upload-pdf"]', NULL, 'PDF upload component does not exist when FillPDF is not configured.');
+
+    // FillPDF configured.
+    $this->configureBackend();
+    $this->drupalGet('admin/structure/fillpdf');
+
+    $this->assertFieldByXPath('//input[@id="edit-upload-pdf"]', NULL, 'PDF upload component exists.');
+    $this->assertFieldByXPath('//input[@id="edit-upload-pdf"][@type="file"][@accept="application/pdf"]', NULL, 'PDF upload component has appropriate attributes.');
+  }
+
+  /**
+   * Make sure that file access works properly.
+   */
+  public function testFileAccess() {
+    $this->createFileField('field_pdf', 'page');
+
+    // Make a basic page.
+    $new_node = new stdClass();
+    $new_node->type = 'page';
+    $new_node->title = t('Test node');
+    $new_node->field_body = array(
+      LANGUAGE_NONE => array(
+        0 => array(
+          'value' => 'This is test text.',
+        ),
+      ),
+    );
+    $new_node->uid = 1;
+    node_save($new_node);
+
+    $this->configureBackend();
+
+    // Upload a template.
+    $this->uploadTestPdf();
+
+    $this->assertFieldByXPath('//input[@id="edit-upload-pdf"]', NULL, 'PDF update component exists.');
+    $this->assertFieldByXPath('//input[@id="edit-upload-pdf"][@type="file"][@accept="application/pdf"]', NULL, 'PDF update component has appropriate attributes.');
+
+    $fid = $this->getLatestFillPdfForm();
+    db_update('fillpdf_forms')
+      ->fields(array('destination_path' => 'output'))
+      ->condition('fid', $fid)
+      ->execute();
+
+    $fillpdf_object = fillpdf_merge_pdf($fid, array($new_node->nid), NULL, NULL, FALSE, FALSE, TRUE, FALSE);
+    $saved_file = fillpdf_action_save_to_file($fillpdf_object, 'fillpdf_test_v4.pdf', FALSE, FALSE);
+    $saved_file->display = 1;
+
+    // Create an unmanaged copy of the file.
+    $copied_file_path = file_unmanaged_copy($saved_file->uri, $saved_file->uri, FILE_EXISTS_RENAME);
+    $this->assertEqual($copied_file_path, 'private://fillpdf/output/fillpdf_test_v4_0.pdf');
+
+    $new_node->field_pdf = array(
+      LANGUAGE_NONE => array(
+        0 => (array) $saved_file,
+      ),
+    );
+    node_save($new_node);
+
+    $this->drupalGet("node/{$new_node->nid}");
+    $this->assertResponse(403, 'Access properly denied for non-admin.');
+
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_v4.pdf');
+    $this->assertResponse(200, 'User can generate and access PDF from any data when they have the Publish All PDFs permission.');
+
+    $this->drupalLogin($this->nonPrivilegedUser);
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_v4.pdf');
+    $this->assertResponse(403, 'User without Administer PDFs and without Publish All PDFs cannot access PDF they cannot view the node for.');
+    variable_set('file_module_test_grant_download_access', TRUE);
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_v4.pdf');
+    $this->assertResponse(403, 'Access is denied even if another module grants access using hook_file_download().');
+    variable_set('file_module_test_grant_download_access', FALSE);
+
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_v4_0.pdf');
+    $this->assertResponse(403, 'Access is not granted to an arbitrary private file by default.');
+    variable_set('file_module_test_grant_download_access', TRUE);
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_v4_0.pdf');
+    $this->assertResponse(200, 'Access is granted to an arbitrary private file after another module grants access using hook_file_download().');
+    variable_set('file_module_test_grant_download_access', FALSE);
+
+    // Test access when generated through entities.
+    $this->drupalLogin($this->privilegedUser);
+    $fillpdf_object = fillpdf_merge_pdf($fid, NULL, NULL, NULL, FALSE, FALSE, TRUE, FALSE, NULL, NULL, array("node:{$new_node->nid}"));
+    $saved_file_2 = fillpdf_action_save_to_file($fillpdf_object, 'fillpdf_test_entity_v4.pdf', FALSE, FALSE);
+    $saved_file_2->display = 1;
+
+    // Create an unmanaged copy of the file.
+    $copied_file_path = file_unmanaged_copy($saved_file_2->uri, $saved_file_2->uri, FILE_EXISTS_RENAME);
+    $this->assertEqual($copied_file_path, 'private://fillpdf/output/fillpdf_test_entity_v4_0.pdf');
+
+    $new_node->field_pdf = array(
+      LANGUAGE_NONE => array(
+        0 => (array) $saved_file_2,
+      ),
+    );
+    node_save($new_node);
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_entity_v4.pdf');
+    $this->assertResponse(200, 'Entity mode: User can generate and access PDF from any data when they have the Publish All PDFs permission.');
+
+    $this->drupalLogin($this->nonPrivilegedUser);
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_entity_v4.pdf');
+    $this->assertResponse(403, 'Entity mode: User without Administer PDFs and without Publish All PDFs cannot access PDF they cannot view the node for.');
+    variable_set('file_module_test_grant_download_access', TRUE);
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_entity_v4.pdf');
+    $this->assertResponse(403, 'Access is denied even if another module grants access using hook_file_download().');
+    variable_set('file_module_test_grant_download_access', FALSE);
+
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_entity_v4_0.pdf');
+    $this->assertResponse(403, 'Access is not granted to an arbitrary private file by default.');
+    variable_set('file_module_test_grant_download_access', TRUE);
+    $this->drupalGet('system/files/fillpdf/output/fillpdf_test_entity_v4_0.pdf');
+    $this->assertResponse(200, 'Access is granted to an arbitrary private file after another module grants access using hook_file_download().');
+    variable_set('file_module_test_grant_download_access', FALSE);
+  }
+
+}

@@ -1,0 +1,142 @@
+<?php
+
+/**
+ * Tests parsing links for nodes.
+ */
+class FillPdfNodeTestCase extends DrupalWebTestCase {
+
+  /**
+   * The profile to install as a basis for testing.
+   *
+   * @var string
+   */
+  protected $profile = 'minimal';
+
+  protected $nodes;
+  protected $message;
+
+  /**
+   *
+   */
+  public static function getInfo() {
+    // Note: getInfo() strings are not translated with t().
+    return array(
+      'name' => 'FillPDF link creation for nodes',
+      'description' => 'Ensure that FillPDF creates correct links for nodes.',
+      'group' => 'FillPDF',
+    );
+  }
+
+  /**
+   *
+   */
+  public function setUp() {
+    // Enable any modules required for the test. This should be an array of
+    // module names.
+    parent::setUp(array('node', 'fillpdf'));
+
+    // Create three test nodes with the IDs 123, 234, and 345.
+    $nodes = array();
+    for ($nid = 111; $nid <= 113; $nid++) {
+      $nodes[] = (object) array(
+        'nid' => $nid,
+        'type' => 'article',
+      );
+    }
+    $this->nodes = $nodes;
+
+    $this->message = "Test case %name:\n<br />%output (actual result) equals\n<br />%expected (expected).";
+  }
+
+  /**
+   * Test fillpdf_context_to_link() with nodes.
+   */
+  public function testNodeLink() {
+    $base_context = array(
+      'nodes' => array(),
+      'webforms' => array(),
+      'uc_orders' => array(),
+      'uc_order_products' => array(),
+      'entities' => array(),
+    );
+
+    foreach ($this->dataProvider() as $test_case) {
+      list($name, $nodes, $expected) = $test_case;
+
+      // Ensure links were correctly created from context.
+      $context = array(
+        'nodes' => $nodes,
+      ) + $base_context;
+      $output = rawurldecode(fillpdf_context_to_link(1, $context));
+
+      $this->assertEqual($expected, $output, t($this->message, array(
+        '%name' => $name,
+        '%output' => $output,
+        '%expected' => $expected,
+      )));
+    }
+  }
+
+  /**
+   * Test fillpdf_pdf_link() with a single node in legacy format.
+   *
+   * Fillpdf_pdf_link() accepts a single nid being passed in as $nids. We're
+   * therefore separately testing single entity cases in this legacy format.
+   * All other cases are fully covered by testNodeLink().
+   */
+  public function testLegacyNodeLink() {
+    foreach ($this->dataProvider() as $test_case) {
+      list($name, $nodes, $expected) = $test_case;
+
+      if (count($nodes) == 1) {
+        $node = reset($nodes);
+        $output = rawurldecode(fillpdf_pdf_link(1, $node->nid));
+
+        $this->assertEqual($expected, $output, t($this->message, array(
+          '%name' => $name . ' (legacy format)',
+          '%output' => $output,
+          '%expected' => $expected,
+        )));
+      }
+    }
+  }
+
+  /**
+   * Data provider for testNodeLink() and testLegacyNodeLink().
+   *
+   * @return array
+   *   Array of test cases.
+   */
+  public function dataProvider() {
+    $base_url = url('fillpdf', array(
+      'query' => array('fid' => 1),
+      'absolute' => TRUE,
+    ));
+
+    $test_cases = array();
+
+    // Test case: single node.
+    $test_cases[] = array(
+      'Single node',
+      array(reset($this->nodes)),
+      $base_url . '&nid=111',
+    );
+
+    // Test case: multiple nodes.
+    $test_cases[] = array(
+      'Multiple nodes',
+      $this->nodes,
+      $base_url . '&nids[0]=111&nids[1]=112&nids[2]=113',
+    );
+
+    // Test case: multiple nodes in reverse order.
+    $test_cases[] = array(
+      'Multiple nodes (in reverse order)',
+      array_reverse($this->nodes),
+      $base_url . '&nids[0]=113&nids[1]=112&nids[2]=111',
+    );
+
+    return $test_cases;
+  }
+
+}

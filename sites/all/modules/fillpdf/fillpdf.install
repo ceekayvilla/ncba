@@ -1,0 +1,413 @@
+<?php
+
+/**
+ * @file
+ * Install.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function fillpdf_schema() {
+  $schema = array();
+
+  $schema['fillpdf_forms'] = array(
+    'fields' => array(
+      'fid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'type' => 'varchar',
+        'length' => 512,
+        'not null' => TRUE,
+      ),
+      'default_nid' => array(
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'url' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'destination_path' => array(
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'replacements' => array(
+        'type' => 'text',
+        'size' => 'normal',
+      ),
+      'destination_redirect' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+      ),
+      'admin_title' => array(
+        'type' => 'varchar',
+        'length' => 512,
+      ),
+      'scheme' => array(
+        'type' => 'varchar',
+        'length' => 64,
+      ),
+      'default_entity_type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+    ),
+    'primary key' => array('fid'),
+  );
+
+  $schema['fillpdf_fields'] = array(
+    'fields' => array(
+      'fid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'pdf_key' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'binary' => TRUE,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'prefix' => array(
+        'type' => 'varchar',
+        'length' => 4096,
+      ),
+      'value' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+      ),
+      'suffix' => array(
+        'type' => 'varchar',
+        'length' => 4096,
+      ),
+      'replacements' => array(
+        'type' => 'text',
+        'size' => 'normal',
+      ),
+    ),
+    'primary key' => array('fid', 'pdf_key'),
+  );
+
+  $schema['fillpdf_file_context'] = array(
+    'fields' => array(
+      'fcid' => array(
+        'description' => 'The unique identifier representing this FillPDF file context.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'context' => array(
+        'description' => 'JSON representing the FillPDF file context.',
+        'type' => 'text',
+        'size' => 'normal',
+      ),
+      'fid' => array(
+        'description' => 'The {file_usage.fid} of the FillPDF file.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('fcid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function fillpdf_install() {
+  _fillpdf_add_publish_completed_orders_permission();
+}
+
+/**
+ * Allow anyone to fill Completed orders by default.
+ *
+ * This is subject to having other required permissions such as view own orders.
+ * Only do this once, ever.
+ */
+function _fillpdf_add_publish_completed_orders_permission() {
+  if (module_exists('uc_order') && module_exists('user') && !variable_get('fillpdf_uc_order_initialized', FALSE)) {
+    $order_statuses = uc_order_status_list();
+    $completed_status = NULL;
+    foreach ($order_statuses as $order_status) {
+      if ($order_status['id'] == 'completed') {
+        $completed_status = $order_status['id'];
+      }
+    }
+
+    if ($completed_status) {
+      $roles = user_roles();
+
+      foreach ($roles as $rid => $title) {
+        user_role_grant_permissions($rid, array(
+          "publish {$completed_status} order data",
+        ));
+      }
+
+      variable_set('fillpdf_uc_order_initialized', TRUE);
+
+      $fillpdf_permissions = fillpdf_permission();
+      drupal_set_message(t('FillPDF has automatically given all the roles the @permission permission. You can disable this from the Permissions page. This is the only time FillPDF will do this automatically.', array('@permission' => $fillpdf_permissions["publish $completed_status order data"]['title'])));
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function fillpdf_uninstall() {
+  require_once __DIR__ . '/fillpdf.module';
+
+  $result = db_select('fillpdf_forms', 'ff')
+    ->fields('ff', array('fid'))
+    ->execute();
+  while ($fid = $result->fetchColumn()) {
+    fillpdf_form_delete_file($fid);
+  }
+
+  $variables = array(
+    'fillpdf_local_service_endpoint',
+    'fillpdf_scheme',
+    'fillpdf_service',
+    'fillpdf_test_last_merge_metadata',
+    'fillpdf_uc_order_initialized',
+  );
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
+}
+
+/**
+ * Add field to store destination path for saving PDFs as files.
+ */
+function fillpdf_update_7001() {
+  if (!db_field_exists('fillpdf_forms', 'destination_path')) {
+    db_add_field('fillpdf_forms', 'destination_path', array('type' => 'varchar', 'length' => 255));
+  }
+}
+
+/**
+ * Add fields to store token replacements.
+ */
+function fillpdf_update_7002() {
+  if (!db_field_exists('fillpdf_forms', 'replacements')) {
+    db_add_field('fillpdf_forms', 'replacements', array('type' => 'text', 'size' => 'normal'));
+  }
+  if (!db_field_exists('fillpdf_fields', 'replacements')) {
+    db_add_field('fillpdf_fields', 'replacements', array('type' => 'text', 'size' => 'normal'));
+  }
+}
+
+/**
+ * Convert legacy config variables to new fillpdf_service variable and delete.
+ */
+function fillpdf_update_7003() {
+  $default = FALSE;
+  global $conf;
+  foreach (array('fillpdf_remote_service', 'fillpdf_local_service', 'fillpdf_local_php') as $variable_name) {
+    if (isset($conf[$variable_name])) {
+      if ($conf[$variable_name]) {
+        $default = $variable_name;
+      }
+      variable_del($variable_name);
+    }
+  }
+  if ($default) {
+    $variable_name_map = array(
+      'fillpdf_local_php' => 'pdftk',
+      'fillpdf_local_service' => 'local',
+      'fillpdf_remote_service' => 'remote',
+    );
+    variable_set('fillpdf_service', $variable_name_map[$default]);
+  }
+}
+
+/**
+ * Add field to store default NID.
+ */
+function fillpdf_update_7004() {
+  if (!db_field_exists('fillpdf_forms', 'default_nid')) {
+    db_add_field('fillpdf_forms', 'default_nid', array('type' => 'int', 'unsigned' => TRUE));
+  }
+}
+
+/**
+ * Add database field to hold "Redirect to saved file" setting.
+ */
+function fillpdf_update_7005() {
+  if (!db_field_exists('fillpdf_forms', 'destination_redirect')) {
+    db_add_field('fillpdf_forms', 'destination_redirect', array('type' => 'int', 'size' => 'tiny', 'unsigned' => TRUE));
+  }
+}
+
+/**
+ * Add database fields for prefix and suffix.
+ */
+function fillpdf_update_7006() {
+  $schema = drupal_get_schema_unprocessed('fillpdf', 'fillpdf_fields');
+  if (!db_field_exists('fillpdf_fields', 'prefix')) {
+    db_add_field('fillpdf_fields', 'prefix', $schema['fields']['prefix']);
+  }
+  if (!db_field_exists('fillpdf_fields', 'suffix')) {
+    db_add_field('fillpdf_fields', 'suffix', $schema['fields']['suffix']);
+  }
+}
+
+/**
+ * Add administrative title; make title longer.
+ */
+function fillpdf_update_7101() {
+  $schema = drupal_get_schema_unprocessed('fillpdf', 'fillpdf_forms');
+  if (!db_field_exists('fillpdf_forms', 'admin_title')) {
+    db_add_field('fillpdf_forms', 'admin_title', $schema['fields']['admin_title']);
+  }
+
+  db_change_field('fillpdf_forms', 'title', 'title', $schema['fields']['title']);
+}
+
+/**
+ * Let all roles use completed order data to fill PDFs by default.
+ *
+ * This is assuming they otherwise are allowed.
+ */
+function fillpdf_update_7102() {
+  _fillpdf_add_publish_completed_orders_permission();
+}
+
+/**
+ * Add scheme field to fillpdf_forms.
+ */
+function fillpdf_update_7103() {
+  $schema = drupal_get_schema_unprocessed('fillpdf', 'fillpdf_forms');
+  if (!db_field_exists('fillpdf_forms', 'scheme')) {
+    db_add_field('fillpdf_forms', 'scheme', $schema['fields']['scheme']);
+  }
+}
+
+/**
+ * Add {fillpdf_file_context} table.
+ */
+function fillpdf_update_7104() {
+  $schema = drupal_get_schema_unprocessed('fillpdf');
+  if (!db_table_exists('fillpdf_file_context')) {
+    db_create_table('fillpdf_file_context', $schema['fillpdf_file_context']);
+  }
+
+  return 'Add {fillpdf_file_context} table.';
+}
+
+/**
+ * Add fid field to fillpdf_file_context so we can remove context by fid.
+ */
+function fillpdf_update_7105() {
+  $schema = drupal_get_schema_unprocessed('fillpdf', 'fillpdf_file_context');
+  if (!db_field_exists('fillpdf_file_context', 'fid')) {
+    db_add_field('fillpdf_file_context', 'fid', $schema['fields']['fid']);
+  }
+
+  return 'Add fid field to fillpdf_file_context so we can remove context by fid.';
+}
+
+/**
+ * Convert old JSON file contexts to the link-based format.
+ */
+function fillpdf_update_7106() {
+  $fcs = db_query("SELECT fcid, fid FROM {fillpdf_file_context}");
+
+  foreach ($fcs as $fc) {
+    $context = _fillpdf_old_file_context_load($fc->fcid);
+
+    if ($context) {
+      // We didn't store sample info in the past, but we know it's a sample if
+      // all four array keys are empty.
+      $sample = FALSE;
+      if (empty($context['nodes']) && empty($context['webforms']) && empty($context['uc_orders']) && empty($context['uc_order_products'])) {
+        $sample = TRUE;
+      }
+
+      $as_link = fillpdf_context_to_link($fc->fid, $context, $sample);
+
+      // Update it to the link format in the database.
+      db_update('fillpdf_file_context')
+        ->fields(array('context' => $as_link))
+        ->condition('fcid', $fc->fcid)
+        ->execute();
+    }
+  }
+
+  drupal_set_message(t('Private file metadata migrated to the new format.'));
+}
+
+/**
+ * Load a context object.
+ *
+ * @param int $fcid
+ *   The fcid of the context object to load.
+ *
+ * @return object|bool
+ *   Returns the decoded context object or FALSE if the fcid cannot be found.
+ */
+function _fillpdf_old_file_context_load($fcid) {
+  $json = db_query('SELECT context
+    FROM {fillpdf_file_context}
+    WHERE fcid = :fcid',
+    array(':fcid' => $fcid))
+    ->fetchField();
+
+  // There might be new data in the DB already, so make sure this looks JSON-y.
+  if ($json && substr($json, 0, 1) === '{') {
+    $json = json_decode($json);
+
+    // Fix the structure of the array; json_decode isn't 100% smart.
+    $json = (array) $json;
+    $json_copy = $json;
+
+    foreach ((array) $json_copy['webforms'] as $index => $webform) {
+      $json['webforms'][$index] = (array) $json_copy['webforms'][$index];
+    }
+  }
+  else {
+    $json = FALSE;
+  }
+
+  return $json;
+}
+
+/**
+ * Add field to store default entity type. Also change default_nid to varchar.
+ */
+function fillpdf_update_7107() {
+  if (!db_field_exists('fillpdf_forms', 'default_entity_type')) {
+    db_add_field('fillpdf_forms', 'default_entity_type', array('type' => 'varchar', 'length' => 255));
+  }
+  // Change default_nid into a varchar to support entities with string IDs.
+  db_change_field('fillpdf_forms', 'default_nid', 'default_nid', array(
+    'type' => 'varchar',
+    'length' => 255,
+  ));
+}
+
+/**
+ * Mark {fillpdf_fields}.pdf_key BINARY to make it behave case-sensitive.
+ */
+function fillpdf_update_7108() {
+  db_change_field('fillpdf_fields', 'pdf_key', 'pdf_key', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'binary' => TRUE,
+    'not null' => TRUE,
+  ));
+}

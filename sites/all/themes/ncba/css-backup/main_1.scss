@@ -1,0 +1,350 @@
+
+@mixin borderRadius($radius){
+
+  border-radius: $radius;
+  -o-border-radius: $radius;
+  -webkit-border-radius: $radius;
+  -moz-border-radius: $radius;
+
+}
+
+@mixin removeTextDecoration(){
+
+  text-decoration: none;
+  outline: none;
+  border: none;
+  
+}
+
+/***** GENERAL STYLING *******/
+
+img{
+
+  height: auto;
+
+}
+
+.centerAligner{
+
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  max-width: 960px;
+
+
+}
+
+h1,h2,h3,h4,h5,h6{
+
+  font-family: "Titillium Web",sans-serif;
+  font-weight: 600;
+
+}
+
+p,a,span,input,li,label{
+
+  font-family: "Titillium Web",sans-serif;
+  text-decoration: none;
+
+}
+
+ol{
+  li{
+    list-style: decimal;
+    margin-bottom: 10px;
+    margin-left: 30px;
+    font-size: 16px;
+    line-height: 20px;
+  }
+}
+
+p,label{
+
+  font-size: 16px;
+  letter-spacing: 1px;
+  line-height: 24px;
+  overflow: hidden;
+
+}
+
+.ui-datepicker .ui-datepicker-title,.ui-datepicker .ui-datepicker-header{
+  background: #77BC1F;
+  color: #fff;
+  font-family: "Titillium Web",sans-serif;
+}
+
+.ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight{
+  
+  background:#225A3F;
+  color: #fff;
+  border: none;
+
+}
+
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active, a.ui-button:active, .ui-button:active, .ui-button.ui-state-active:hover{
+  background: #77BC1F;
+  color: #fff;
+  border: none;
+}
+
+
+
+.row.highlight{
+
+  background: #77BC1F;
+  height: 40px;
+  line-height: 40px;
+  text-indent: 20px;
+
+  h3{
+    
+    color: #fff;
+    font-size: 18px;
+
+  }
+
+}
+
+.row{
+
+  margin-top: 15px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  
+  label{
+    width: 100%;
+    display: block;
+  }
+
+  input,select{
+    
+    width: 100%;
+    outline: none;
+    height: 40px;
+    border: none;
+    background: #e4e4e4;
+    color: #808080;
+    text-indent: 15px;
+    text-transform: uppercase;
+    @include borderRadius(3px);
+
+  }
+
+  .upload{
+    
+    height: 40px;
+    line-height: 40px;
+    background: #F2F2F2;
+    color: #808080;
+    text-indent: 15px;
+  }
+
+  input[type="file"]{
+    text-indent: 0px;
+    height: 40px;
+  }
+
+  input[type="radio"],input[type="checkbox"]{
+    width: 16px;
+    height: 16px;
+  }
+  
+  label{
+    margin-bottom: 15px;
+  }
+
+  .error{
+    color: red;
+    margin-top: 0px;
+    margin-bottom: 10px;
+  }
+
+  .one_third:last-child{
+    margin-right: 0px;
+    width: 34%;
+  }
+
+  .one_quarter:last-child{
+    margin-right: 0px;
+    width: 25%;
+  }
+
+  .half:last-child{
+
+    margin-right: 0px;
+    width: 50%;
+
+  }
+
+  ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    color: #808080;
+    font-family: 'epocaclassicextralight_italic';
+  }
+  ::-moz-placeholder { /* Firefox 19+ */
+    color: #808080;
+    font-family: 'epocaclassicextralight_italic';
+  }
+  :-ms-input-placeholder { /* IE 10+ */
+    color: #808080;
+    font-family: 'epocaclassicextralight_italic';
+  }
+  :-moz-placeholder { /* Firefox 18- */
+    color: #808080;
+    font-family: 'epocaclassicextralight_italic';
+  }
+
+}
+
+.disclaimer{
+  input{
+    width: auto;
+    display: inline-block;
+  }
+}
+
+.fl{
+
+  float: left;
+
+}
+
+.fr{
+
+  float: right;
+
+}
+
+.one_third{
+  
+  width: 30%;
+  margin-right: 3%;
+
+}
+
+.two_third{
+  width: 66%;
+  margin-right: 3%;
+}
+
+.center{
+  text-align: center;
+}
+
+.one_quarter{
+  
+  width: 23%;
+  margin-right: 2%;
+
+}
+
+.half{
+  
+  width: 48%;
+  margin-right: 2%;
+
+}
+
+.three_quarter{
+  
+  width: 73%;
+  margin-right: 2%;
+
+}
+
+.full_width{
+
+  width: 100%;
+
+}
+
+.one_fifth{
+
+  width: 18%;
+  margin-right: 2%;
+
+}
+
+.two_fifth{
+  width: 38%;
+  margin-right: 2%;
+}
+
+.three_fifth{
+  
+  width: 58%;
+  margin-right: 2%;
+
+}
+
+.one_eigth{
+  
+  width: 10.5%;
+  margin-right: 2%;
+
+}
+
+.two_eigth{
+  
+  width: 23%;
+  margin-right: 2%;
+
+}
+
+html{
+  
+}
+
+body{
+
+
+}
+
+button{
+  
+  cursor: pointer;
+  outline: none;
+  border: none;
+
+}
+
+.row input.readMore{
+  
+  display: inline-block;
+  padding:15px 40px;
+  text-align: center;
+  @include borderRadius(5px);
+  background: #77BC1F;
+  color: #fff;
+  margin-top: 15px;
+  text-transform: uppercase;
+
+}
+
+.row input.readMore:hover{
+  background: #225A3F;
+  color: #77BC1F;
+
+}
+
+
+
+/***** END GENERAL STYLING *******/
+
+
+/***** MEDIA QUERY 960PX *******/
+
+@media screen and (max-width:960px){
+
+}
+
+
+@media screen and (max-width:768px){
+  
+
+}
+
+/***** END MEDIA QUERY 960PX *******/
+@media screen and (max-width:500px){
+
+}
